@@ -1,11 +1,12 @@
 name: Build and Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-  build-and-upload:
+  build-and-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,12 +44,23 @@ jobs:
         run: |
           tar -czf pink072-wasm.tar.gz -C pkg .
 
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
+      - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: pink072-wasm.tar.gz
-          asset_name: pink072-wasm.tar.gz
-          asset_content_type: application/gzip
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "${{ github.ref_name }} - Release" \
+            --notes "## PINK-072 Rust Implementation
+
+          PINK-072 仕様を忠実に実装した Rust クレートのリリースです。
+
+          ### Features
+
+          - **Core API**: \`pink072_wrap\`, \`pink072_wrap_into\`, \`pink072_unwrap\` 関数を提供
+          - **WASM Support**: \`wasm\` フィーチャで WebAssembly バインディングに対応
+          - **Frame Structure**: Header (32B) + Cover (72×72 RGBA) + Payload の固定フレーム構造
+
+          ### Assets
+
+          - \`pink072-wasm.tar.gz\`: WebAssembly パッケージ（wasm-pack でビルド済み）" \
+            pink072-wasm.tar.gz
