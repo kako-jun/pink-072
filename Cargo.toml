@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 wasm-bindgen = { version = "0.2", optional = true }
 
 [dev-dependencies]
-cargo-husky = { version = "1", features = ["precommit-hook", "user-hooks"] }
+cargo-husky = { version = "1", features = ["precommit-hook"] }
 
 [package.metadata.husky]
 pre-commit = "cargo fmt -- --check && cargo clippy -- -D warnings"
