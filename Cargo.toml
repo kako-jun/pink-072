@@ -1,0 +1,20 @@
+[package]
+name = "pink072"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+wasm = ["wasm-bindgen"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+
+[dev-dependencies]
+cargo-husky = { version = "1", features = ["precommit-hook", "user-hooks"] }
+
+[package.metadata.husky]
+pre-commit = "cargo fmt -- --check && cargo clippy -- -D warnings"

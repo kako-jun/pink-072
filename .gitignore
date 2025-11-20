@@ -1,0 +1,4 @@
+/pkg/
+/target/
+wasm-pack.log
+.DS_Store
