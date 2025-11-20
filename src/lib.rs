@@ -2,6 +2,27 @@ use std::fmt;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
+#[cfg(feature = "wasm")]
+#[wasm_bindgen]
+pub struct WasmUnwrapResult {
+    payload_type: u8,
+    payload: Vec<u8>,
+}
+
+#[cfg(feature = "wasm")]
+#[wasm_bindgen]
+impl WasmUnwrapResult {
+    #[wasm_bindgen(getter)]
+    pub fn payload_type(&self) -> u8 {
+        self.payload_type
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn payload(&self) -> Vec<u8> {
+        self.payload.clone()
+    }
+}
+
 const HEADER_LEN: usize = 32;
 const COVER_WIDTH: usize = 72;
 const COVER_HEIGHT: usize = 72;
@@ -211,8 +232,13 @@ pub fn wasm_pink072_wrap_into(
 
 #[cfg(feature = "wasm")]
 #[wasm_bindgen]
-pub fn wasm_pink072_unwrap(frame: &[u8]) -> Result<(u8, Vec<u8>), JsValue> {
-    pink072_unwrap(frame).map_err(|e| JsValue::from_str(&e.to_string()))
+pub fn wasm_pink072_unwrap(frame: &[u8]) -> Result<WasmUnwrapResult, JsValue> {
+    pink072_unwrap(frame)
+        .map(|(payload_type, payload)| WasmUnwrapResult {
+            payload_type,
+            payload,
+        })
+        .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[cfg(test)]
