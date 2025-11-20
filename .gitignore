@@ -2,3 +2,9 @@
 /target/
 wasm-pack.log
 .DS_Store
+
+# Cargo.lock should not be committed for library crates
+Cargo.lock
+
+# User-specific cargo-husky configuration
+.cargo-husky/
