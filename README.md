@@ -6,7 +6,7 @@ PINK-072 仕様を忠実に実装した Rust クレートです。Rust からは
 - `pink072_wrap_into(payload, payload_type, seed9, strength, out_frame) -> usize`: 事前確保した `out_frame` にフレームを書き込みたい場合はこちらを使用します。返り値は書き込まれたバイト長です。
 - `pink072_unwrap(frame) -> (payload_type, payload)`：フレームからヘッダー情報を読み出し、埋め込まれているペイロードを抽出します。
 
-`wasm` フィーチャを有効化すると、`wasm-bindgen` で公開される `wasm_pink072_wrap` / `wasm_pink072_wrap_into` / `wasm_pink072_unwrap` を利用できます。Rust 側の API と同じ振る舞いですが、エラーは `JsValue` として返します。
+`wasm` フィーチャを有効化すると、`wasm-bindgen` で公開される `wasm_pink072_wrap` / `wasm_pink072_wrap_into` / `wasm_pink072_unwrap` を利用できます。Rust 側の API と同じ振る舞いですが、エラーは `JsValue` として返します。`wasm_pink072_unwrap` は `UnwrapResult` オブジェクト（`payload_type` と `payload` プロパティを持つ）を返します。
 
 主な仕様ポイント:
 
