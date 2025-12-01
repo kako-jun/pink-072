@@ -18,7 +18,7 @@ Output files use the `.pnk` extension (PNG-compatible but indicates custom forma
 
 ```toml
 [dependencies]
-pink072 = "0.1"
+pink072 = "1.0"
 ```
 
 ## Usage
