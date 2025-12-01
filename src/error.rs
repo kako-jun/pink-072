@@ -7,6 +7,7 @@ pub enum PinkError {
     FrameTooSmall,
     PayloadLengthOverflow,
     TruncatedFrame,
+    InvalidFormat,
 }
 
 impl fmt::Display for PinkError {
@@ -17,6 +18,7 @@ impl fmt::Display for PinkError {
             PinkError::FrameTooSmall => "frame too small",
             PinkError::PayloadLengthOverflow => "payload length overflow",
             PinkError::TruncatedFrame => "truncated frame",
+            PinkError::InvalidFormat => "invalid PNK format",
         };
         f.write_str(msg)
     }

@@ -1,28 +1,18 @@
 use crate::constants::{COVER_HEIGHT, COVER_WIDTH};
 use crate::error::PinkError;
-use crate::rng::{generate_permutation, perlin2d, seed9_to_u64, xorshift64};
+use crate::noise::{generate_permutation, perlin2d, seed9_to_u64, xorshift64};
 
-/// ピンク系のカラーパレット（ピンク〜白）
-const PINK_PALETTE: [(u8, u8, u8); 5] = [
-    (255, 182, 193), // light pink (ベース)
-    (255, 200, 210), // lighter pink
-    (255, 218, 225), // very light pink
-    (255, 235, 240), // almost white pink
-    (255, 250, 252), // near white
-];
-
-pub fn generate_cover(buf: &mut [u8], seed9: &[u8], strength: u8) {
+pub fn generate_cover(buf: &mut [u8], seed9: &[u8], _strength: u8) {
     let mut state = seed9_to_u64(seed9);
     let perm = generate_permutation(&mut state);
 
-    // strengthに応じたノイズのスケール（大きいほど細かい模様）
-    let base_scale = 0.03 + (strength as f32) * 0.005;
+    // 大きめの模様が2〜3個見える程度のスケール
+    let base_scale = 0.04;
 
     // オフセット（シードごとに異なる位置から開始）
     let offset_x = (xorshift64(&mut state) % 1000) as f32;
     let offset_y = (xorshift64(&mut state) % 1000) as f32;
 
-    // 2つの周波数を重ねて有機的な曲線を作る
     for y in 0..COVER_HEIGHT {
         for x in 0..COVER_WIDTH {
             let pixel = y * COVER_WIDTH + x;
@@ -31,24 +21,23 @@ pub fn generate_cover(buf: &mut [u8], seed9: &[u8], strength: u8) {
             let fx = x as f32 + offset_x;
             let fy = y as f32 + offset_y;
 
-            // 低周波（大きな曲線）+ 高周波（細部）
+            // 2層のノイズで滑らかな丸い光のような模様
             let n1 = perlin2d(fx * base_scale, fy * base_scale, &perm);
-            let n2 = perlin2d(fx * base_scale * 2.5, fy * base_scale * 2.5, &perm);
-            let noise = n1 * 0.7 + n2 * 0.3;
+            let n2 = perlin2d(fx * base_scale * 0.6, fy * base_scale * 0.6, &perm);
+            let noise = n1 * 0.5 + n2 * 0.5;
 
-            // ノイズ値をパレットインデックスに変換
-            let idx = ((noise * 4.99) as usize).min(4);
-            let (r, g, b) = PINK_PALETTE[idx];
+            // 滑らかな補間でピンク〜白のグラデーション
+            let t = noise.clamp(0.0, 1.0);
+            let t_smooth = t * t * (3.0 - 2.0 * t); // smoothstep
 
-            // strengthに応じて微細なバリエーションを追加
-            let var = ((strength as i16) * 2).min(20);
-            let vr = ((xorshift64(&mut state) % (var as u64 * 2 + 1)) as i16 - var) as i16;
-            let vg = ((xorshift64(&mut state) % (var as u64 * 2 + 1)) as i16 - var) as i16;
-            let vb = ((xorshift64(&mut state) % (var as u64 * 2 + 1)) as i16 - var) as i16;
+            // ピンク (255, 170, 185) → 薄ピンク (255, 235, 240)
+            let r = 255;
+            let g = (170.0 + (235.0 - 170.0) * t_smooth) as u8;
+            let b = (185.0 + (240.0 - 185.0) * t_smooth) as u8;
 
-            buf[base] = (r as i16 + vr).clamp(0, 255) as u8;
-            buf[base + 1] = (g as i16 + vg).clamp(0, 255) as u8;
-            buf[base + 2] = (b as i16 + vb).clamp(0, 255) as u8;
+            buf[base] = r;
+            buf[base + 1] = g;
+            buf[base + 2] = b;
             buf[base + 3] = 0xFF;
         }
     }
