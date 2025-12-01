@@ -18,7 +18,7 @@
 
 ```toml
 [dependencies]
-pink072 = "1.0"
+pink072 = "1.1"
 ```
 
 ## 使い方
@@ -30,12 +30,7 @@ use pink072::encode_file;
 use std::path::Path;
 
 let seed: [u8; 9] = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x11];
-encode_file(
-    Path::new("secret.jpg"),
-    Path::new("output.pnk"),
-    &seed,
-    8,  // strength (0-12)
-)?;
+encode_file(Path::new("secret.jpg"), Path::new("output.pnk"), &seed)?;
 ```
 
 ### ファイルをデコード
@@ -44,10 +39,7 @@ encode_file(
 use pink072::decode_file;
 use std::path::Path;
 
-let file_name = decode_file(
-    Path::new("output.pnk"),
-    Path::new("./extracted/"),
-)?;
+let file_name = decode_file(Path::new("output.pnk"), Path::new("./extracted/"))?;
 // 元のファイルが ./extracted/secret.jpg に復元される
 ```
 
@@ -57,12 +49,8 @@ let file_name = decode_file(
 use pink072::encode_folder;
 use std::path::Path;
 
-encode_folder(
-    Path::new("secret_folder/"),
-    Path::new("output.pnk"),
-    &seed,
-    8,
-)?;
+let seed: [u8; 9] = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x11];
+encode_folder(Path::new("secret_folder/"), Path::new("output.pnk"), &seed)?;
 ```
 
 ### 低レベルAPI
@@ -70,8 +58,10 @@ encode_folder(
 ```rust
 use pink072::{pink072_wrap, pink072_unwrap, encode_pnk, decode_pnk};
 
+let seed: [u8; 9] = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x11];
+
 // 生データをラップ
-let frame = pink072_wrap(b"secret", 0, &seed, 8)?;
+let frame = pink072_wrap(b"secret", 0, &seed)?;
 
 // PNK形式に変換
 let pnk = encode_pnk(&frame);

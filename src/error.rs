@@ -23,3 +23,5 @@ impl fmt::Display for PinkError {
         f.write_str(msg)
     }
 }
+
+impl std::error::Error for PinkError {}

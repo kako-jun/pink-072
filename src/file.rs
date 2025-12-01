@@ -15,12 +15,7 @@ pub const PAYLOAD_TYPE_ZIP: u8 = 2;
 /// 単一ファイルをPNKにエンコード
 ///
 /// ペイロード構造: `[ファイル名長 2B (LE)][ファイル名 UTF-8][データ]`
-pub fn encode_file(
-    input_path: &Path,
-    output_path: &Path,
-    seed9: &[u8; 9],
-    strength: u8,
-) -> io::Result<()> {
+pub fn encode_file(input_path: &Path, output_path: &Path, seed9: &[u8; 9]) -> io::Result<()> {
     let file_name = input_path
         .file_name()
         .and_then(|n| n.to_str())
@@ -29,7 +24,7 @@ pub fn encode_file(
     let file_data = fs::read(input_path)?;
     let payload = build_file_payload(file_name, &file_data);
 
-    let frame = pink072_wrap(&payload, PAYLOAD_TYPE_FILE, seed9, strength)
+    let frame = pink072_wrap(&payload, PAYLOAD_TYPE_FILE, seed9)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
 
     let pnk = encode_pnk(&frame);
@@ -101,13 +96,8 @@ fn parse_file_payload(payload: &[u8]) -> io::Result<(String, &[u8])> {
 }
 
 /// 生データをPNKにエンコード（ファイル名なし）
-pub fn encode_raw(
-    data: &[u8],
-    output_path: &Path,
-    seed9: &[u8; 9],
-    strength: u8,
-) -> io::Result<()> {
-    let frame = pink072_wrap(data, PAYLOAD_TYPE_RAW, seed9, strength)
+pub fn encode_raw(data: &[u8], output_path: &Path, seed9: &[u8; 9]) -> io::Result<()> {
+    let frame = pink072_wrap(data, PAYLOAD_TYPE_RAW, seed9)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
 
     let pnk = encode_pnk(&frame);
@@ -136,15 +126,10 @@ pub fn decode_raw(input_path: &Path) -> io::Result<Vec<u8>> {
 }
 
 /// フォルダをZIP化してPNKにエンコード
-pub fn encode_folder(
-    input_path: &Path,
-    output_path: &Path,
-    seed9: &[u8; 9],
-    strength: u8,
-) -> io::Result<()> {
+pub fn encode_folder(input_path: &Path, output_path: &Path, seed9: &[u8; 9]) -> io::Result<()> {
     let zip_data = create_zip_from_folder(input_path)?;
 
-    let frame = pink072_wrap(&zip_data, PAYLOAD_TYPE_ZIP, seed9, strength)
+    let frame = pink072_wrap(&zip_data, PAYLOAD_TYPE_ZIP, seed9)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
 
     let pnk = encode_pnk(&frame);
@@ -178,7 +163,7 @@ fn create_zip_from_folder(folder_path: &Path) -> io::Result<Vec<u8>> {
     {
         let mut zip = ZipWriter::new(&mut buffer);
         let options =
-            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 
         add_folder_to_zip(&mut zip, folder_path, folder_path, options)?;
         zip.finish()?;
@@ -241,16 +226,11 @@ fn extract_zip_to_folder(zip_data: &[u8], output_dir: &Path) -> io::Result<Vec<S
 }
 
 /// ファイルまたはフォルダを自動判定してエンコード
-pub fn encode_auto(
-    input_path: &Path,
-    output_path: &Path,
-    seed9: &[u8; 9],
-    strength: u8,
-) -> io::Result<()> {
+pub fn encode_auto(input_path: &Path, output_path: &Path, seed9: &[u8; 9]) -> io::Result<()> {
     if input_path.is_dir() {
-        encode_folder(input_path, output_path, seed9, strength)
+        encode_folder(input_path, output_path, seed9)
     } else {
-        encode_file(input_path, output_path, seed9, strength)
+        encode_file(input_path, output_path, seed9)
     }
 }
 

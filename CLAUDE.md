@@ -49,7 +49,7 @@ src/
 | 0 | 1 | Version (=1) |
 | 1 | 1 | Payload Type |
 | 2 | 1 | Block Size (=16) |
-| 3 | 1 | Color Strength (0-12) |
+| 3 | 1 | Reserved (=0) |
 | 4 | 8 | Payload Length (u64 LE) |
 | 12 | 20 | Reserved (0埋め) |
 
@@ -70,7 +70,7 @@ src/
 
 ### ZIP形式 (Type=2)
 
-標準ZIPアーカイブをそのままペイロードとして格納。フォルダ構造、ファイル名、属性を完全保持。
+非圧縮ZIPアーカイブ（Stored）をペイロードとして格納。フォルダ構造、ファイル名を保持。圧縮しないため高速。
 
 ## Cover画像生成
 
@@ -91,7 +91,7 @@ COVER_HEIGHT: usize = 72
 ## 依存クレート
 
 - `wasm-bindgen` 0.2 (optional): WASM連携
-- `zip` (optional): フォルダのZIP圧縮
+- `zip` 2: フォルダのZIPアーカイブ（非圧縮）
 
 ## ビルド
 

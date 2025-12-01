@@ -2,7 +2,7 @@ use crate::constants::{COVER_HEIGHT, COVER_WIDTH};
 use crate::error::PinkError;
 use crate::noise::{generate_permutation, perlin2d, seed9_to_u64, xorshift64};
 
-pub fn generate_cover(buf: &mut [u8], seed9: &[u8], _strength: u8) {
+pub fn generate_cover(buf: &mut [u8], seed9: &[u8]) {
     let mut state = seed9_to_u64(seed9);
     let perm = generate_permutation(&mut state);
 

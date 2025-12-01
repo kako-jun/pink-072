@@ -5,15 +5,14 @@ use std::io::Write;
 fn main() {
     let payload = b"Hello, PINK-072!";
     let seed: [u8; 9] = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x11];
-    let strength = 8;
     let payload_type = 2;
 
     println!("=== PINK-072 動作確認 ===\n");
     println!("入力: {:?}", String::from_utf8_lossy(payload));
     println!("シード: {:02X?}", seed);
-    println!("強度: {}, タイプ: {}\n", strength, payload_type);
+    println!("タイプ: {}\n", payload_type);
 
-    let frame = pink072_wrap(payload, payload_type, &seed, strength).unwrap();
+    let frame = pink072_wrap(payload, payload_type, &seed).unwrap();
     println!("フレーム生成: {} bytes", frame.len());
 
     // Cover部分を抽出 (Header 32B の後、72x72x4 bytes)
@@ -78,7 +77,7 @@ fn write_chunk(f: &mut File, t: &[u8; 4], d: &[u8]) -> std::io::Result<()> {
     f.write_all(&(d.len() as u32).to_be_bytes())?;
     f.write_all(t)?;
     f.write_all(d)?;
-    let mut c = [t.to_vec(), d.to_vec()].concat();
+    let c = [t.to_vec(), d.to_vec()].concat();
     let mut crc = 0xFFFFFFFFu32;
     for &b in &c {
         crc ^= b as u32;

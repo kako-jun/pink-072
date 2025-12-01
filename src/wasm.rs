@@ -26,10 +26,8 @@ pub fn wasm_pink072_wrap(
     payload: &[u8],
     payload_type: u8,
     seed9: &[u8],
-    strength: u8,
 ) -> Result<Vec<u8>, JsValue> {
-    pink072_wrap(payload, payload_type, seed9, strength)
-        .map_err(|e| JsValue::from_str(&e.to_string()))
+    pink072_wrap(payload, payload_type, seed9).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
@@ -37,10 +35,9 @@ pub fn wasm_pink072_wrap_into(
     payload: &[u8],
     payload_type: u8,
     seed9: &[u8],
-    strength: u8,
     out_frame: &mut [u8],
 ) -> Result<usize, JsValue> {
-    pink072_wrap_into(payload, payload_type, seed9, strength, out_frame)
+    pink072_wrap_into(payload, payload_type, seed9, out_frame)
         .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
