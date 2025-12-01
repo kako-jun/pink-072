@@ -1,68 +1,56 @@
-use crate::constants::{BLOCK_SIZE, COVER_HEIGHT, COVER_PIXELS, COVER_WIDTH};
+use crate::constants::{COVER_HEIGHT, COVER_WIDTH};
 use crate::error::PinkError;
-use crate::rng::{seed9_to_u64, xorshift64};
+use crate::rng::{generate_permutation, perlin2d, seed9_to_u64, xorshift64};
+
+/// ピンク系のカラーパレット（ピンク〜白）
+const PINK_PALETTE: [(u8, u8, u8); 5] = [
+    (255, 182, 193), // light pink (ベース)
+    (255, 200, 210), // lighter pink
+    (255, 218, 225), // very light pink
+    (255, 235, 240), // almost white pink
+    (255, 250, 252), // near white
+];
 
 pub fn generate_cover(buf: &mut [u8], seed9: &[u8], strength: u8) {
     let mut state = seed9_to_u64(seed9);
+    let perm = generate_permutation(&mut state);
 
-    for pixel in 0..COVER_PIXELS {
-        let base = pixel * 4;
-        buf[base] = (xorshift64(&mut state) & 0xFF) as u8;
-        buf[base + 1] = (xorshift64(&mut state) & 0xFF) as u8;
-        buf[base + 2] = (xorshift64(&mut state) & 0xFF) as u8;
-        buf[base + 3] = 0xFF;
-    }
+    // strengthに応じたノイズのスケール（大きいほど細かい模様）
+    let base_scale = 0.03 + (strength as f32) * 0.005;
 
-    let blocks_w = COVER_WIDTH.div_ceil(BLOCK_SIZE);
-    let blocks_h = COVER_HEIGHT.div_ceil(BLOCK_SIZE);
-    let total_blocks = blocks_w * blocks_h;
+    // オフセット（シードごとに異なる位置から開始）
+    let offset_x = (xorshift64(&mut state) % 1000) as f32;
+    let offset_y = (xorshift64(&mut state) % 1000) as f32;
 
-    let mut indices: Vec<usize> = (0..total_blocks).collect();
-    for i in (1..total_blocks).rev() {
-        let j = (xorshift64(&mut state) as usize) % (i + 1);
-        indices.swap(i, j);
-    }
+    // 2つの周波数を重ねて有機的な曲線を作る
+    for y in 0..COVER_HEIGHT {
+        for x in 0..COVER_WIDTH {
+            let pixel = y * COVER_WIDTH + x;
+            let base = pixel * 4;
 
-    let mut tmp = vec![0u8; buf.len()];
-    for by in 0..blocks_h {
-        for bx in 0..blocks_w {
-            let src = by * blocks_w + bx;
-            let dst = indices[src];
-            let src_x = bx * BLOCK_SIZE;
-            let src_y = by * BLOCK_SIZE;
-            let dst_x = (dst % blocks_w) * BLOCK_SIZE;
-            let dst_y = (dst / blocks_w) * BLOCK_SIZE;
-            let width = BLOCK_SIZE.min(COVER_WIDTH - src_x).min(COVER_WIDTH - dst_x);
-            let height = BLOCK_SIZE
-                .min(COVER_HEIGHT - src_y)
-                .min(COVER_HEIGHT - dst_y);
-            for row in 0..height {
-                let src_row = ((src_y + row) * COVER_WIDTH + src_x) * 4;
-                let dst_row = ((dst_y + row) * COVER_WIDTH + dst_x) * 4;
-                let len = width * 4;
-                tmp[dst_row..dst_row + len].copy_from_slice(&buf[src_row..src_row + len]);
-            }
+            let fx = x as f32 + offset_x;
+            let fy = y as f32 + offset_y;
+
+            // 低周波（大きな曲線）+ 高周波（細部）
+            let n1 = perlin2d(fx * base_scale, fy * base_scale, &perm);
+            let n2 = perlin2d(fx * base_scale * 2.5, fy * base_scale * 2.5, &perm);
+            let noise = n1 * 0.7 + n2 * 0.3;
+
+            // ノイズ値をパレットインデックスに変換
+            let idx = ((noise * 4.99) as usize).min(4);
+            let (r, g, b) = PINK_PALETTE[idx];
+
+            // strengthに応じて微細なバリエーションを追加
+            let var = ((strength as i16) * 2).min(20);
+            let vr = ((xorshift64(&mut state) % (var as u64 * 2 + 1)) as i16 - var) as i16;
+            let vg = ((xorshift64(&mut state) % (var as u64 * 2 + 1)) as i16 - var) as i16;
+            let vb = ((xorshift64(&mut state) % (var as u64 * 2 + 1)) as i16 - var) as i16;
+
+            buf[base] = (r as i16 + vr).clamp(0, 255) as u8;
+            buf[base + 1] = (g as i16 + vg).clamp(0, 255) as u8;
+            buf[base + 2] = (b as i16 + vb).clamp(0, 255) as u8;
+            buf[base + 3] = 0xFF;
         }
-    }
-    buf.copy_from_slice(&tmp);
-
-    let max_r = strength.min(12);
-    let max_g = (strength / 2).min(6);
-    let max_b = (strength.saturating_mul(5) / 6).min(10);
-
-    for pixel in 0..COVER_PIXELS {
-        let base = pixel * 4;
-        let dr = (xorshift64(&mut state) & 0xFF) as u8 % (max_r + 1);
-        let dg = (xorshift64(&mut state) & 0xFF) as u8 % (max_g + 1);
-        let db = (xorshift64(&mut state) & 0xFF) as u8 % (max_b + 1);
-
-        let r = (buf[base] as i16 + dr as i16).clamp(0, 255);
-        let g = (buf[base + 1] as i16 - dg as i16).clamp(0, 255);
-        let b = (buf[base + 2] as i16 - db as i16).clamp(0, 255);
-
-        buf[base] = r as u8;
-        buf[base + 1] = g as u8;
-        buf[base + 2] = b as u8;
     }
 }
 
