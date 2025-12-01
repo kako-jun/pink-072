@@ -1,23 +1,69 @@
 # pink-072
 
-PINK-072 仕様を忠実に実装した Rust クレートです。Rust からは次の 3 つの関数を利用できます。
+PINK-072仕様を実装したRustクレート。ペイロードをピンク色のカバー画像に埋め込みます。
 
-- `pink072_wrap(payload, payload_type, seed9, strength) -> Vec<u8>`: 任意長のペイロードを受け取り、Header(32B) + Cover(72×72 RGBA) + Payload で構成されるフレームを新規バッファに生成します。
-- `pink072_wrap_into(payload, payload_type, seed9, strength, out_frame) -> usize`: 事前確保した `out_frame` にフレームを書き込みたい場合はこちらを使用します。返り値は書き込まれたバイト長です。
-- `pink072_unwrap(frame) -> (payload_type, payload)`：フレームからヘッダー情報を読み出し、埋め込まれているペイロードを抽出します。
+## インストール
 
-`wasm` フィーチャを有効化すると、`wasm-bindgen` で公開される `wasm_pink072_wrap` / `wasm_pink072_wrap_into` / `wasm_pink072_unwrap` を利用できます。Rust 側の API と同じ振る舞いですが、エラーは `JsValue` として返します。`wasm_pink072_unwrap` は `UnwrapResult` オブジェクト（`payload_type` と `payload` プロパティを持つ）を返します。
+```toml
+[dependencies]
+pink072 = "0.1"
+```
 
-主な仕様ポイント:
+## 使い方
 
-1. フレームは `Header (32B) | Cover (72×72 RGBA = 20736B) | Payload` の並びで固定されます。
-2. Header には Version(=1)、Payload Type(0〜4)、Block Size(=16)、Color Strength(0〜12)、Payload Length(u64, LE)、Reserved(20B, 0埋め) を格納します。
-3. Cover は 9 バイト鍵から xorshift64 で生成した乱数ノイズを敷き詰め、16×16 ブロック単位で Fisher–Yates シャッフルし、最後に淡いピンクのバイアス（R増/G減/B減）を掛けます。
-4. ペイロードは加工せずにコピーされ、`pink072_unwrap` は Header と Cover をスキップして生データを返します。
+### Rust API
 
-`wasm-pack build --features wasm` で WebAssembly を生成すれば、JavaScript から上記 API を直接呼び出せます。
+```rust
+use pink072::{pink072_wrap, pink072_unwrap};
 
-## 開発フロー
+// ペイロードを埋め込み
+let payload = b"secret data";
+let seed = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x11];
+let frame = pink072_wrap(payload, 2, &seed, 8)?;
 
-- Git hooks は `cargo-husky` によって Rust 側だけで管理します。`cargo install cargo-husky` をインストール後、`cargo husky install` を一度実行すると pre-commit フックが登録され、コミット前に `cargo fmt -- --check` と `cargo clippy -- -D warnings` が走ります。
-- GitHub Actions (`.github/workflows/release.yml`) はリリース公開時に Rust のフォーマット／Lint／テストを実行し、`wasm-pack build --release --target web --features wasm` で生成した `pkg/` を `pink072-wasm.tar.gz` にまとめてリリースページへ添付します。
+// ペイロードを抽出
+let (payload_type, extracted) = pink072_unwrap(&frame)?;
+```
+
+### WASM API
+
+```bash
+wasm-pack build --features wasm --target web
+```
+
+```javascript
+import init, { wasm_pink072_wrap, wasm_pink072_unwrap } from './pkg/pink072.js';
+
+await init();
+const frame = wasm_pink072_wrap(payload, 2, seed, 8);
+const result = wasm_pink072_unwrap(frame);
+```
+
+## API
+
+### `pink072_wrap(payload, payload_type, seed9, strength) -> Vec<u8>`
+
+ペイロードを埋め込んだフレームを生成。
+
+- `payload`: 任意長のバイト列
+- `payload_type`: 0〜4のペイロード種別
+- `seed9`: 9バイトのシード（乱数生成用）
+- `strength`: 0〜12のピンク強度
+
+### `pink072_unwrap(frame) -> (payload_type, payload)`
+
+フレームからペイロードを抽出。
+
+## フレーム構造
+
+```
+Header (32B) | Cover (72×72 RGBA = 20,736B) | Payload
+```
+
+- **Header**: Version, PayloadType, BlockSize, Strength, PayloadLength, Reserved
+- **Cover**: シード由来の乱数ノイズ + Fisher-Yatesシャッフル + ピンクバイアス
+- **Payload**: 加工なしの生データ
+
+## ライセンス
+
+MIT
