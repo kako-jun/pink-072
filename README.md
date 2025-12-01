@@ -66,4 +66,4 @@ Header (32B) | Cover (72×72 RGBA = 20,736B) | Payload
 
 ## ライセンス
 
-MIT
+GPL-3.0-or-later
