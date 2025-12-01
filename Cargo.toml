@@ -3,6 +3,11 @@ name = "pink072"
 version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
+description = "PINK-072 specification implementation for embedding payloads in pink cover images"
+repository = "https://github.com/kako-jun/pink-072"
+readme = "README.md"
+keywords = ["steganography", "image", "encoding"]
+categories = ["encoding", "multimedia::images"]
 
 [features]
 default = []
