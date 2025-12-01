@@ -9,3 +9,4 @@ Cargo.lock
 # User-specific cargo-husky configuration
 .cargo-husky/
 .claude/settings.local.json
+.serena/
