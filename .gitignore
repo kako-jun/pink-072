@@ -10,3 +10,4 @@ Cargo.lock
 .cargo-husky/
 .claude/settings.local.json
 .serena/
+.mcp.json
